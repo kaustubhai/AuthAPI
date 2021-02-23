@@ -29,7 +29,12 @@ module.exports = {
     updateEmail: async (req, res) => {
         try {
             const { email } = req.body
-            const user = await User.findById(req.user)
+            let user = await User.findOne({ email });
+            if (user)
+                return res.status(400).json({msg: "User already exists"});
+            if(!email.match(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/))
+                return res.status(400).json({msg: "Invalid Mail Provided"});
+            user = await User.findById(req.user)
             user.email = email
             await user.save()
             res.json({msg: "Email Updated Succesfully"})
@@ -41,6 +46,10 @@ module.exports = {
     resetPin: async (req, res) => {
         try {
             const { newPin, password } = req.body;
+            if (newPin.match(/[^0-9]/g))
+                return res.status(400).json({msg: "Pin should consist only numbers"})
+            if (newPin.length !== 4)
+                return res.status(400).json({msg: "Pin should be exactly 4 length"})
             const user = await User.findById(req.user)
             if (!await bcrypt.compare(password, user.password))
                 return res.status(400).json({msg: "Invalid Password"});
@@ -56,6 +65,8 @@ module.exports = {
     resetPassword: async (req, res) => {
         try {
             const { password, newPassword } = req.body;
+            if (newPassword.length < 8)
+                return res.status(400).json({msg: "Password should be of 8 characters atleast"})
             const user = await User.findById(req.user)
             if (!await bcrypt.compare(password, user.password))
                 return res.status(400).json({msg: "Invalid Password"});
