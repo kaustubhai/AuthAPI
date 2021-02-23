@@ -11,7 +11,7 @@ module.exports = {
             })
         } catch (error) {
             console.log(error)
-            res.status(500).send("Internal Server Error")
+            res.status(500).json({msg: "Internal Server Error"})
         }
     },
     updateName: async (req, res) => {
@@ -20,10 +20,10 @@ module.exports = {
             const user = await User.findById(req.user)
             user.name = name
             await user.save()
-            res.send("Name Updated Succesfully")
+            res.json({msg: "Name Updated Succesfully"})
         } catch (error) {
             console.log(error)
-            res.status(500).send("Internal Server Error")
+            res.status(500).json({msg: "Internal Server Error"})
         }
     },
     updateEmail: async (req, res) => {
@@ -32,10 +32,10 @@ module.exports = {
             const user = await User.findById(req.user)
             user.email = email
             await user.save()
-            res.send("Email Updated Succesfully")
+            res.json({msg: "Email Updated Succesfully"})
         } catch (error) {
             console.log(error)
-            res.status(500).send("Internal Server Error")
+            res.status(500).json({msg: "Internal Server Error"})
         }
     },
     resetPin: async (req, res) => {
@@ -43,14 +43,14 @@ module.exports = {
             const { newPin, password } = req.body;
             const user = await User.findById(req.user)
             if (!await bcrypt.compare(password, user.password))
-                return res.status(400).send("Invalid Password");
+                return res.status(400).json({msg: "Invalid Password"});
             const hashed = await bcrypt.hash(newPin, 4);
             user.pin = hashed
             await user.save();
-            res.send("Pin Updated")
+            res.json({msg: "Pin Updated"})
         } catch (error) {
             console.log(error)
-            res.status(500).send("Internal Server Error")
+            res.status(500).json({msg: "Internal Server Error"})
         }
     },
     resetPassword: async (req, res) => {
@@ -58,14 +58,23 @@ module.exports = {
             const { password, newPassword } = req.body;
             const user = await User.findById(req.user)
             if (!await bcrypt.compare(password, user.password))
-                return res.status(400).send("Invalid Password");
+                return res.status(400).json({msg: "Invalid Password"});
             const hashed = await bcrypt.hash(newPassword, 8);
             user.password = hashed
             await user.save();
-            res.send("Password Updated")
+            res.json({msg: "Password Updated"})
         } catch (error) {
             console.log(error)
-            res.status(500).send("Internal Server Error")
+            res.status(500).json({msg: "Internal Server Error"})
+        }
+    },
+    logoutUser: async (req, res) => {
+        try {
+            res.clearCookie('token')
+            res.json({msg: "User logged out"})
+        } catch (error) {
+            console.log(error)
+            res.status(500).json({msg: "Internal Server Error"})
         }
     }
 }

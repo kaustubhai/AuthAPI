@@ -13,4 +13,4 @@ API Offers endpoints for
 - [x] Reset User's Pin
 - [x] Reset User's Password
 
-Check complete documentation [here](https://bit.ly/2Nas1XL)
+Check complete documentation [here](https://bit.ly/3aJeLCS)

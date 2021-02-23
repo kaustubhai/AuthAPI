@@ -9,15 +9,15 @@ module.exports = {
             const { name, email, password, pin } = req.body;
             let user = await User.findOne({ email });
             if (user)
-                return res.status(400).send("User already exists");
+                return res.status(400).json({msg: "User already exists"});
             if(!email.match(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/))
-                return res.status(400).send("Invalid Mail Provided");
+                return res.status(400).json({msg: "Invalid Mail Provided"});
             if (password.length < 8)
-                return res.status(400).send("Password should be of 8 characters atleast")
+                return res.status(400).json({msg: "Password should be of 8 characters atleast"})
             if (pin.match(/[^0-9]/g))
-                return res.status(400).send("Pin should consist only numbers")
+                return res.status(400).json({msg: "Pin should consist only numbers"})
             if (pin.length !== 4)
-                return res.status(400).send("Pin should be exactly 4 length")
+                return res.status(400).json({msg: "Pin should be exactly 4 length"})
             user = new User({ name, email, password, pin });
             user.password = await bcrypt.hash(user.password, 8);
             user.pin = await bcrypt.hash(user.pin, 4);
@@ -25,7 +25,7 @@ module.exports = {
             res.json({ msg: "User Created. Login!" })
         } catch (error) {
             console.log(error)
-            res.status(500).send("Internal Server Error")
+            res.status(500).json({msg: "Internal Server Error"})
         }
     },
 
@@ -34,14 +34,14 @@ module.exports = {
             const { email, pin } = req.body;
             let user = await User.findOne({ email });
             if (user.length === 0)
-                return res.status(400).send("No User Founded");
+                return res.status(400).json({msg: "No User Founded"});
             if (!await bcrypt.compare(pin, user.pin))
-                return res.status(400).send("Pin Mismatched")
+                return res.status(400).json({msg: "Pin Mismatched"})
             const token = await user.generateToken()
             res.cookie('token', token, { httpOnly: true }).json(token)
         } catch (error) {
             console.log(error)
-            res.status(500).send("Internal Server Error")
+            res.status(500).json({msg: "Internal Server Error"})
         }
     },
 
@@ -50,14 +50,14 @@ module.exports = {
             const { email, password } = req.body;
             let user = await User.findOne({ email });
             if (!user)
-                return res.status(400).send("No User Founded");
+                return res.status(400).json({msg: "No User Founded"});
             if (!await bcrypt.compare(password, user.password))
-                return res.status(400).send("Password Mismatched")
+                return res.status(400).json({msg: "Password Mismatched"})
             const token = await user.generateToken()
                 res.cookie('token', token, { httpOnly: true }).json(token)
         } catch (error) {
             console.log(error)
-            res.status(500).send("Internal Server Error")
+            res.status(500).json({msg: "Internal Server Error"})
         }
     },
 
@@ -66,7 +66,7 @@ module.exports = {
             const { email } = req.body
             let user = await User.findOne({ email });
             if (!user)
-                return res.status(400).send("No User Founded");
+                return res.status(400).json({ msg: "No User Founded" });
             const payload = {
                 password: user.password
             }
@@ -76,7 +76,7 @@ module.exports = {
             res.json(token)
         } catch (error) {
             console.log(error)
-            res.status(500).send("Internal Server Error")
+            res.status(500).json({msg: "Internal Server Error"})
         }
     },
 
@@ -89,7 +89,7 @@ module.exports = {
             jwt.verify(token, user.password, (err) => {
                 if(err){
                     tokenValid = false
-                    return res.status(400).send("Token Expired")
+                    return res.status(400).json({msg: "Token Expired"})
                 }
             })
             if(tokenValid){
@@ -101,7 +101,7 @@ module.exports = {
         } catch (error) {
             console.log(error)
             if(tokenValid)
-                res.status(500).send("Internal Server Error")
+                res.status(500).json({ msg: "Internal Server Error" })
         }
     }
 }
