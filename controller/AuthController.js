@@ -2,6 +2,8 @@ const User = require("../model/user");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const emailer = require("../utils/mailConfig");
+const { OAuth2Client } = require("google-auth-library");
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 module.exports = {
   register: async (req, res) => {
@@ -34,12 +36,47 @@ module.exports = {
     }
   },
 
+  googleLogin: async (req, res) => {
+    try {
+      const { tokenId } = req.body;
+      const response = await client.verifyIdToken({
+        idToken: tokenId,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+
+      const { email_verified, email } = response.payload;
+      if (email_verified) {
+        const user = await models.User.findOne({ email }).select("-password");
+        if (user) {
+          const token = await user.generateToken();
+          res.cookie("token", token, { httpOnly: true }).json(token);
+        } else {
+          const newUser = new models.User({
+            name: response.payload.name,
+            email: response.payload.email,
+            password: response.payload.email + process.env.JWT_SECRET,
+          });
+          newUser.password = await bcrypt.hash(user.password, 8);
+          await newUser.save();
+          res.json({ msg: "User Created. Login!" });
+        }
+      } else return res.json(false, "Please verify your Google account");
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({
+        error: "Something went wrong",
+      });
+    }
+  },
+
   loginWithPin: async (req, res) => {
     try {
       const { email, pin } = req.body;
       let user = await User.findOne({ email });
       if (user.length === 0)
         return res.status(400).json({ msg: "No User Founded" });
+      if (!user.pin)
+        return res.status(400).json({ msg: "Pin not associated with account" });
       if (!(await bcrypt.compare(pin, user.pin)))
         return res.status(400).json({ msg: "Pin Mismatched" });
       const token = await user.generateToken();
